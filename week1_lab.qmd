@@ -1,0 +1,274 @@
+---
+title: "Week 1 Lab"
+author: "Leilanie Rubinstein"
+format: html
+execute: 
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+## Setup
+
+```{r}
+library(sf) # for vector data (more soon!)
+library(stars) # for raster data (more soon!)
+library(tmap) # for static and interactive maps
+library(here)
+```
+
+## Specifying spatial data
+
+```{r}
+# raster of global elevations
+world_elevation <- read_stars(here("data","worldelevation.tif"))
+
+# country boundaries
+world_vector <- read_sf(here("data","worldvector.gpkg"))
+
+# major cities
+world_cities <- read_sf(here("data","worldcities.gpkg"))
+```
+
+### Shapes and layers
+
+```{r}
+# plotting a single spatial object
+
+tm_shape(world_vector) + # defines the spatial object to plot
+  tm_polygons() # defines how to plot the object
+```
+
+### Shapes hierarchy
+
+```{r}
+# plotting two spatial objects
+
+tm_shape(world_vector) + # defines the FIRST spatial object to plot
+  tm_polygons() + # defines how to plot the FIRST object
+  tm_shape(world_cities) + # defines the SECOND object to plot
+  tm_dots() # defines how to plot the SECOND object
+```
+
+```{r}
+# plotting vector and raster spatial objects
+
+tm_shape(world_elevation) + # plot global elevations
+  tm_raster() + # tm_raster for raster data
+  tm_shape(world_vector) +
+  tm_borders() +
+  tm_shape(world_cities) +
+  tm_dots() +
+  tm_text("name")
+```
+
+```{r}
+# the order of layers matters!
+# When creating maps with `tmap`, whichever dataset is used in the first `tm_shape()` call sets the spatial extent and projection for the entire map
+
+tm_shape(world_cities) + # plot world_cities first
+  tm_dots() +
+  tm_text("name") +
+  tm_shape(world_elevation) +
+  tm_raster() +
+  tm_shape(world_vector) +
+  tm_borders() 
+```
+
+```{r}
+tm_shape(world_elevation) + 
+  tm_raster() + 
+  tm_shape(world_vector) +
+  tm_borders() +
+  tm_shape(world_cities, is.master = TRUE) + # plot world_cities last, but set as main shape
+  tm_dots() +
+  tm_text("name")
+```
+
+### Map extent
+
+```{r}
+# restrict previous map to just Europe using a set of min/max values
+
+tm_shape(world_elevation, bbox = c(-15, 35, 45, 65)) + # add bounding box to restrict extent
+  tm_raster() + 
+tm_shape(world_vector) +
+  tm_borders() 
+
+# can also restrict the map extent using an OpenStreetMap tool called Nominatim to automatically generate minimum and maximum coordinates in the x and y directions based on the provided query
+
+tm_shape(world_elevation, bbox = "Europe") + # query the region of Europe
+  tm_raster(palette = terrain.colors(8)) +
+tm_shape(world_vector) +
+  tm_borders() 
+```
+
+## Layers
+
+```{r}
+# all possible layer types listed on website
+```
+
+### Polygons
+
+```{r}
+tm_shape(world_vector) +
+  tm_polygons()
+```
+
+```{r}
+# modify the colors
+
+tm_shape(world_vector) +
+  tm_polygons(col = "lightblue",
+              border.col = "black",
+              lwd = 0.5,
+              lty = "dashed")
+```
+
+```{r}
+# plot just borders
+
+tm_shape(world_vector) +
+  tm_borders(col = "red")
+```
+
+```{r}
+# fill polygons with fixed color
+
+tm_shape(world_vector) +
+  tm_fill(col = "lightblue")
+```
+
+```{r}
+# fill polygons with a color palette representing a variable
+
+tm_shape(world_vector) +
+  tm_fill("CO2_emissions")
+```
+
+### Symbols
+
+```{r}
+tm_shape(world_cities) +
+  tm_symbols()
+
+tm_shape(world_cities) +
+  tm_squares()
+
+tm_shape(world_cities) +
+  tm_bubbles()
+
+tm_shape(world_cities) +
+  tm_dots()
+```
+
+## Visual variables
+
+```{r}
+# vector of colors
+
+tm_shape(world_vector) +
+  tm_polygons("life_expectancy", 
+              palette = c("yellow", "darkgreen"),
+              title = "Life Expectancy (years)")
+```
+
+
+```{r}
+# palette function
+
+library(viridisLite)
+
+tm_shape(world_vector) +
+  tm_polygons("life_expectancy", 
+              palette = viridis(8),
+              title = "Life Expectancy (years)")
+```
+
+```{r}
+# built-in color palette
+
+tm_shape(world_vector) +
+  tm_polygons("life_expectancy", 
+              palette = "YlGn",
+              title = "Life Expectancy (years)")
+```
+
+### Size
+
+```{r}
+tm_shape(world_vector) +
+  tm_polygons(col = "lightblue") +
+tm_shape(world_cities) +
+  tm_symbols(size = "pop2020",
+             legend.size.is.portrait = TRUE)
+```
+
+## Layout
+
+### Grid lines
+
+```{r}
+# tm_grid() represents the input data’s coordinates
+
+tm_shape(world_vector) +
+  tm_fill() +
+  tm_grid()
+
+# tm_graticules() shows latitude and longitude lines, with degrees as units
+
+tm_shape(world_vector) +
+  tm_fill() +
+  tm_graticules()
+```
+
+### Scale bar and north arrow
+
+```{r}
+tm_shape(world_vector) +
+  tm_fill() +
+  tm_scale_bar() +
+  tm_compass(position = c("left", "top"))
+```
+
+### Layout options
+
+```{r}
+tm_shape(world_vector) +
+  tm_fill(col = "wb_income_region",
+          palette = viridisLite::plasma(5),
+          title = "Regional Income") +
+  tm_layout(bg.color = "grey95",
+            main.title = "Global income",
+            frame = FALSE)
+```
+
+## Interactive options
+
+```{r}
+tmap_mode("view")
+```
+
+```{r}
+tm_shape(world_vector) +
+  tm_fill(col = "gdp_per_cap",
+          title = "GDP per capita") 
+
+# return to regular plotting mode
+
+tmap_mode("plot")
+```
+
+## Saving plots
+
+```{r}
+map1 <- tm_shape(world_vector) +
+  tm_fill(col = "gdp_per_cap",
+          palette = viridisLite::plasma(10),
+          title = "GDP per capita") +
+  tm_layout(main.title = "Global gross domesic product")
+
+tmap_save(map1, here("tmap-example.png"))
+```
+

@@ -1,0 +1,92 @@
+---
+title: "Week 1 Discussion Session"
+author: "Leilanie Rubinstein"
+format: html
+execute: 
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+## Setup 
+
+```{r}
+library(here)
+library(tidyverse)
+library(stars)
+library(sf)
+library(tmap)
+```
+
+## Read in the spatial objects for Easter Island (Rapa Nui/Isla de Pascua)
+
+```{r}
+ei_points <- sf::read_sf(here::here("data", "easter_island", "ei_points.gpkg"))
+volcanoes <- subset(ei_points, type == "volcano")
+ei_elev <- stars::read_stars(here::here("data", "easter_island", "ei_elev.tif"))
+ei_borders <- sf::read_sf(here::here("data", "easter_island", "ei_border.gpkg"))
+ei_roads <- sf::read_sf(here::here("data", "easter_island", "ei_roads.gpkg"))
+```
+
+## Create a map of Easter Island
+
+```{r}
+tm_shape(ei_borders) +
+  tm_polygons()
+```
+
+## Create a map of Easter Island and:
+• denote the island’s borders and continuous elevation
+• denote the island’s volcanoes and roads
+• play with the color palette and essential map elements
+
+```{r}
+tmap_mode("plot")
+
+ei_map_fixed <- tm_shape(ei_elev) +
+  tm_raster(palette = viridisLite::plasma(5),
+            style = "cont",
+            title = "Elevation") + 
+  
+  tm_shape(ei_borders) +
+  tm_borders() + 
+  
+  tm_shape(ei_roads) +
+  tm_lines(col = 'pink') +
+  
+  tm_shape(volcanoes) +
+  tm_dots(shape = 2,
+          size = 0.2,
+          col = "red") +
+  tm_scale_bar() +
+  tm_compass(position = c('right', 'top')) +
+  tm_layout(main.title = "Easter Island Elevation & Volcanoes")
+
+ei_map_fixed
+```
+
+## Create an interactive map of Easter Island
+
+```{r}
+tmap_mode("view")
+
+ei_map_interactive <- tm_shape(ei_elev) +
+  tm_raster(palette = viridisLite::plasma(5),
+            style = "cont",
+            title = "Elevation") + 
+  tm_shape(ei_borders) +
+  tm_borders() +
+  
+  tm_shape(ei_roads) +
+  tm_lines(col = 'pink') +
+  
+  tm_shape(volcanoes) +
+  tm_dots(shape = 1,
+          col = "red") +
+  tm_scale_bar() +
+  tm_compass(position = c('right', 'top')) +
+  tm_layout(main.title = "Easter Island Elevation & Volcanoes")
+
+ei_map_interactive
+```
+
